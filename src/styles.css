@@ -1,0 +1,26 @@
+@import "../node_modules/@angular/material/prebuilt-themes/indigo-pink.css";
+@import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body {
+  height: 100%;
+  margin: 0;
+  font-family: Roboto, "Helvetica Neue", sans-serif;
+  background-color: #f8fafc;
+}
+
+/* Keep these as named classes so templates can reference them */
+.state-correct          { @apply text-emerald-700 font-semibold; }
+.state-partially_flawed { @apply text-amber-700 font-semibold; }
+.state-incorrect        { @apply text-red-700 font-semibold; }
+
+.tutor-response {
+  @apply bg-emerald-50 border-l-4 border-emerald-500 px-4 py-3 rounded-r-lg whitespace-pre-wrap leading-relaxed text-slate-700;
+}
+
+.due-chip {
+  @apply bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full;
+}
