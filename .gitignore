@@ -7,3 +7,8 @@ node_modules/
 *.log
 npm-debug.log*
 .env
+.DS_Store
+Thumbs.db
+npm-debug.log*
+src/environments/environment.development.ts
+src/environments/environment.local.ts
