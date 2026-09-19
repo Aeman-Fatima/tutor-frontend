@@ -1,24 +1,21 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { MatTableModule } from '@angular/material/table';
 import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
+import { forkJoin } from 'rxjs';
 import { TutorService, SrsCard } from '../../services/tutor.service';
+import { AppToolbarComponent } from '../../shared/app-toolbar/app-toolbar.component';
 
 @Component({
   selector: 'app-srs-dashboard',
   standalone: true,
-  imports: [CommonModule, MatTableModule, MatButtonModule, MatToolbarModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatButtonModule, MatIconModule, MatProgressSpinnerModule, AppToolbarComponent],
   template: `
-    <mat-toolbar class="!bg-teal-600 !text-white shadow-md">
-      <button mat-icon-button (click)="back()"><mat-icon>arrow_back</mat-icon></button>
-      <span class="font-semibold">Spaced Repetition Schedule</span>
-    </mat-toolbar>
+    <app-toolbar title="Spaced Repetition Schedule" [backRoute]="['/problems']"></app-toolbar>
 
-    <div class="max-w-3xl mx-auto px-4 py-8">
+    <div class="page-shell">
 
       <div *ngIf="loading" class="flex justify-center py-16">
         <mat-spinner diameter="40"></mat-spinner>
@@ -26,78 +23,77 @@ import { TutorService, SrsCard } from '../../services/tutor.service';
 
       <ng-container *ngIf="!loading">
 
-        <!-- Due today alert -->
-        <div *ngIf="dueNow.length > 0"
-          class="bg-amber-50 border border-amber-200 rounded-2xl px-5 py-4 mb-5 flex items-start gap-3">
-          <mat-icon class="!text-amber-500 shrink-0 mt-0.5">schedule</mat-icon>
-          <div>
-            <p class="text-amber-800 font-semibold text-sm mb-2">
-              {{ dueNow.length }} problem(s) due for review today
+        <!-- Overview stats -->
+        <div class="grid grid-cols-2 gap-3 mb-6" *ngIf="allCards.length > 0">
+          <div class="app-card px-4 py-3 text-center">
+            <p class="text-2xl font-bold text-slate-100">{{ allCards.length }}</p>
+            <p class="text-xs text-slate-400 mt-0.5">Cards scheduled</p>
+          </div>
+          <div class="app-card px-4 py-3 text-center">
+            <p class="text-2xl font-bold" [class.text-amber-400]="dueCards.length > 0" [class.text-emerald-400]="dueCards.length === 0">
+              {{ dueCards.length }}
             </p>
-            <div class="flex flex-wrap gap-2">
-              <button mat-stroked-button
-                *ngFor="let c of dueNow"
-                class="!border-amber-400 !text-amber-700 !rounded-lg !text-xs"
-                (click)="goToProblem(c.problem_index)">
-                Problem {{ c.problem_index + 1 }}
-              </button>
-            </div>
+            <p class="text-xs text-slate-400 mt-0.5">Due today</p>
           </div>
         </div>
 
-        <p *ngIf="cards.length === 0" class="text-slate-400 text-sm py-4">
+        <!-- Due for review section -->
+        <div *ngIf="dueCards.length > 0" class="bg-amber-500/10 border border-amber-500/30 rounded-2xl px-5 py-5 mb-6">
+          <div class="flex items-center gap-2 mb-3">
+            <mat-icon class="!text-amber-400">schedule</mat-icon>
+            <h2 class="text-amber-300 font-bold text-base">
+              Due for Review — {{ dueCards.length }} problem{{ dueCards.length !== 1 ? 's' : '' }}
+            </h2>
+          </div>
+          <p class="text-amber-400/80 text-sm mb-3">These problems are scheduled for review today or are overdue.</p>
+          <div class="flex flex-wrap gap-2">
+            <button mat-stroked-button
+              *ngFor="let c of dueCards"
+              class="!border-amber-500/50 !text-amber-300 !rounded-lg !text-xs !font-semibold hover:!bg-amber-500/10 transition-colors"
+              (click)="goToProblem(c.problem_index)">
+              <mat-icon class="!text-xs !h-4 !w-4 mr-1">replay</mat-icon>
+              Problem {{ c.problem_index + 1 }}
+              <span class="ml-1 text-amber-400/70">(due {{ c.due_date }})</span>
+            </button>
+          </div>
+        </div>
+
+        <div *ngIf="dueCards.length === 0 && allCards.length > 0"
+          class="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl px-5 py-4 mb-6 flex items-center gap-3">
+          <mat-icon class="!text-emerald-400">check_circle</mat-icon>
+          <p class="text-emerald-300 text-sm font-medium">All caught up — no problems due for review today.</p>
+        </div>
+
+        <p *ngIf="allCards.length === 0" class="text-slate-400 text-sm py-4">
           No SRS cards yet — attempt some problems first.
         </p>
 
-        <!-- Schedule table -->
-        <div *ngIf="cards.length > 0" class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-          <div class="px-6 py-4 border-b border-slate-100">
-            <h2 class="text-base font-semibold text-slate-800">
-              Full schedule — <span class="text-teal-600">{{ studentId }}</span>
+        <!-- Full schedule -->
+        <div *ngIf="allCards.length > 0" class="app-card overflow-hidden">
+          <div class="px-5 sm:px-6 py-4 border-b border-slate-800">
+            <h2 class="text-base font-semibold text-slate-100">
+              Full schedule — <span class="text-violet-400">{{ studentId }}</span>
             </h2>
           </div>
-          <table mat-table [dataSource]="cards" class="w-full">
 
-            <ng-container matColumnDef="problem">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !text-xs">Problem</th>
-              <td mat-cell *matCellDef="let c">
-                <a class="text-teal-600 cursor-pointer text-sm font-medium hover:underline"
-                   (click)="goToProblem(c.problem_index)">
-                  Problem {{ c.problem_index + 1 }}
-                </a>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="due_date">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !text-xs">Next Review</th>
-              <td mat-cell *matCellDef="let c" class="!text-slate-700 !text-sm">
-                {{ c.due_date }}
-                <span *ngIf="c.due_now" class="due-chip ml-2">DUE</span>
-              </td>
-            </ng-container>
-
-            <ng-container matColumnDef="interval">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !text-xs">Interval</th>
-              <td mat-cell *matCellDef="let c" class="!text-slate-600 !text-sm">{{ c.interval }}d</td>
-            </ng-container>
-
-            <ng-container matColumnDef="repetitions">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !text-xs">Reps</th>
-              <td mat-cell *matCellDef="let c" class="!text-slate-600 !text-sm">{{ c.repetitions }}</td>
-            </ng-container>
-
-            <ng-container matColumnDef="ease_factor">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !text-xs">Ease</th>
-              <td mat-cell *matCellDef="let c" class="!text-slate-600 !text-sm">
-                {{ c.ease_factor | number:'1.2-2' }}
-              </td>
-            </ng-container>
-
-            <tr mat-header-row *matHeaderRowDef="cols"></tr>
-            <tr mat-row *matRowDef="let row; columns: cols;"
-              [class.bg-amber-50]="row.due_now"
-              class="hover:bg-slate-50"></tr>
-          </table>
+          <ul class="divide-y divide-slate-800">
+            <li *ngFor="let c of allCards"
+              class="px-5 sm:px-6 py-3 flex items-center justify-between gap-3 flex-wrap hover:bg-slate-800/40 transition-colors"
+              [ngClass]="isDue(c) ? 'bg-amber-500/5' : ''">
+              <a class="text-violet-400 cursor-pointer text-sm font-medium hover:underline shrink-0"
+                (click)="goToProblem(c.problem_index)">
+                Problem {{ c.problem_index + 1 }}
+              </a>
+              <div class="flex items-center gap-4 text-xs text-slate-500 flex-wrap">
+                <span>Next: <strong class="text-slate-300 font-medium">{{ c.due_date }}</strong>
+                  <span *ngIf="isDue(c)" class="due-chip ml-1">DUE</span>
+                </span>
+                <span>{{ c.interval }}d interval</span>
+                <span>{{ c.repetitions }} reps</span>
+                <span>ease {{ c.ease_factor | number:'1.2-2' }}</span>
+              </div>
+            </li>
+          </ul>
         </div>
       </ng-container>
     </div>
@@ -105,21 +101,31 @@ import { TutorService, SrsCard } from '../../services/tutor.service';
 })
 export class SrsDashboardComponent implements OnInit {
   studentId = localStorage.getItem('student_id') || '';
-  cards: SrsCard[] = [];
-  dueNow: SrsCard[] = [];
+  allCards: SrsCard[] = [];
+  dueCards: SrsCard[] = [];
   loading = true;
-  cols = ['problem', 'due_date', 'interval', 'repetitions', 'ease_factor'];
+  today = new Date().toISOString().slice(0, 10);
 
   constructor(private svc: TutorService, private router: Router) {}
 
   ngOnInit() {
     if (!this.studentId) { this.router.navigate(['/']); return; }
-    this.svc.getSrs(this.studentId).subscribe({
-      next: (cs) => { this.cards = cs; this.dueNow = cs.filter(c => c.due_now); this.loading = false; },
+    forkJoin({
+      all: this.svc.getSrs(this.studentId),
+      due: this.svc.getDueProblems(this.studentId),
+    }).subscribe({
+      next: ({ all, due }) => {
+        this.allCards = all;
+        this.dueCards = due;
+        this.loading = false;
+      },
       error: () => { this.loading = false; },
     });
   }
 
-  back() { this.router.navigate(['/problems']); }
+  isDue(c: SrsCard): boolean {
+    return c.due_date <= this.today;
+  }
+
   goToProblem(idx: number) { this.router.navigate(['/problem', idx]); }
 }

@@ -1,0 +1,22 @@
+@use '@angular/material' as mat;
+
+// ── Angular Material theme ──────────────────────────────────────────────
+// Dark purple/amber/red theme so Material's own chrome (focus rings, ripples,
+// spinners, select panels, form-field outlines) matches the dark, violet-accented
+// look of the rest of the app instead of a light/default palette.
+@include mat.core();
+
+$tutor-primary: mat.m2-define-palette(mat.$m2-deep-purple-palette, 400, 200, 700);
+$tutor-accent: mat.m2-define-palette(mat.$m2-amber-palette, 400, 200, 700);
+$tutor-warn: mat.m2-define-palette(mat.$m2-red-palette, 400);
+
+$tutor-theme: mat.m2-define-dark-theme((
+  color: (
+    primary: $tutor-primary,
+    accent: $tutor-accent,
+    warn: $tutor-warn,
+  ),
+  density: 0,
+));
+
+@include mat.all-component-themes($tutor-theme);

@@ -1,5 +1,6 @@
 .angular/
 dist/
+.vercel/
 tmp/
 node_modules/
 .vscode/
@@ -12,3 +13,4 @@ Thumbs.db
 npm-debug.log*
 src/environments/environment.development.ts
 src/environments/environment.local.ts
+.vercel

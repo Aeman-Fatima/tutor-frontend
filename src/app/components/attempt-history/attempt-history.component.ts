@@ -1,31 +1,39 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { MatTableModule } from '@angular/material/table';
-import { MatButtonModule } from '@angular/material/button';
-import { MatToolbarModule } from '@angular/material/toolbar';
-import { MatIconModule } from '@angular/material/icon';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 import { TutorService, HistoryEntry } from '../../services/tutor.service';
+import { AppToolbarComponent } from '../../shared/app-toolbar/app-toolbar.component';
+
+const STATE_BADGE: Record<string, string> = {
+  correct: 'badge-success',
+  partially_flawed: 'badge-warning',
+  incorrect: 'badge-danger',
+};
+
+const STATE_DOT: Record<string, string> = {
+  correct: 'bg-emerald-500',
+  partially_flawed: 'bg-amber-500',
+  incorrect: 'bg-red-500',
+};
 
 @Component({
   selector: 'app-attempt-history',
   standalone: true,
-  imports: [CommonModule, MatTableModule, MatButtonModule, MatToolbarModule, MatIconModule, MatProgressSpinnerModule],
+  imports: [CommonModule, MatProgressSpinnerModule, AppToolbarComponent],
   template: `
-    <mat-toolbar class="!bg-teal-600 !text-white shadow-md">
-      <button mat-icon-button (click)="back()"><mat-icon>arrow_back</mat-icon></button>
-      <span class="font-semibold">History — Problem {{ problemIndex + 1 }}</span>
-    </mat-toolbar>
+    <app-toolbar [title]="'History — Problem ' + (problemIndex + 1)" [backRoute]="['/problem', problemIndex]"></app-toolbar>
 
-    <div class="max-w-3xl mx-auto px-4 py-8">
-      <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+    <div class="page-shell">
+      <div class="app-card overflow-hidden">
 
-        <div class="px-6 py-4 border-b border-slate-100">
-          <h2 class="text-base font-semibold text-slate-800">Attempt history for <span class="text-teal-600">{{ studentId }}</span></h2>
+        <div class="px-5 sm:px-6 py-4 border-b border-slate-800">
+          <h2 class="text-base font-semibold text-slate-100">
+            Attempt history for <span class="text-violet-400">{{ studentId }}</span>
+          </h2>
         </div>
 
-        <div class="px-6 py-6">
+        <div class="px-5 sm:px-6 py-6">
           <div *ngIf="loading" class="flex justify-center py-8">
             <mat-spinner diameter="36"></mat-spinner>
           </div>
@@ -34,51 +42,35 @@ import { TutorService, HistoryEntry } from '../../services/tutor.service';
             No attempts recorded yet for this problem.
           </p>
 
-          <table mat-table [dataSource]="history" *ngIf="!loading && history.length > 0" class="w-full">
-            <ng-container matColumnDef="attempt">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !text-xs">#</th>
-              <td mat-cell *matCellDef="let row; let i = index" class="!text-slate-600">{{ i + 1 }}</td>
-            </ng-container>
-            <ng-container matColumnDef="state">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !text-xs">State</th>
-              <td mat-cell *matCellDef="let row">
-                <span [class]="'state-' + row.state">{{ stateLabel(row.state) }}</span>
-              </td>
-            </ng-container>
-            <ng-container matColumnDef="timestamp">
-              <th mat-header-cell *matHeaderCellDef class="!text-slate-500 !text-xs">Time</th>
-              <td mat-cell *matCellDef="let row" class="!text-slate-400 !text-xs">
-                {{ row.timestamp | date:'short' }}
-              </td>
-            </ng-container>
-            <tr mat-header-row *matHeaderRowDef="cols"></tr>
-            <tr mat-row *matRowDef="let row; columns: cols;" class="hover:bg-slate-50"></tr>
-          </table>
+          <!-- Timeline -->
+          <ol *ngIf="!loading && history.length > 0" class="space-y-0">
+            <li *ngFor="let h of history; let i = index" class="flex gap-3 msg-in">
+              <div class="flex flex-col items-center">
+                <span class="w-3 h-3 rounded-full shrink-0 mt-1.5" [ngClass]="STATE_DOT[h.state]"></span>
+                <span *ngIf="i < history.length - 1" class="w-px flex-1 bg-slate-800 my-1"></span>
+              </div>
+              <div class="flex-1 pb-5 flex items-center justify-between gap-3 flex-wrap">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm font-medium text-slate-200">Attempt {{ i + 1 }}</span>
+                  <span class="badge" [ngClass]="STATE_BADGE[h.state]">{{ stateLabel(h.state) }}</span>
+                </div>
+                <span class="text-xs text-slate-500">{{ h.timestamp | date:'short' }}</span>
+              </div>
+            </li>
+          </ol>
 
-          <!-- Dot progression -->
-          <div *ngIf="!loading && history.length > 0" class="mt-6">
-            <p class="text-xs text-slate-400 mb-2 uppercase tracking-wide">Attempt progression</p>
-            <div class="flex gap-2 flex-wrap">
+          <!-- Summary strip -->
+          <div *ngIf="!loading && history.length > 0" class="mt-2 pt-4 border-t border-slate-800">
+            <p class="text-xs text-slate-500 mb-2 uppercase tracking-wide">At a glance</p>
+            <div class="flex gap-1.5 flex-wrap">
               <div *ngFor="let h of history; let i = index"
-                [ngClass]="{
-                  'bg-emerald-500': h.state === 'correct',
-                  'bg-amber-500':   h.state === 'partially_flawed',
-                  'bg-red-500':     h.state === 'incorrect'
-                }"
+                [ngClass]="STATE_DOT[h.state]"
                 class="w-5 h-5 rounded-full shadow-sm"
                 [title]="'Attempt ' + (i+1) + ': ' + h.state">
               </div>
             </div>
           </div>
         </div>
-<!-- 
-        <div class="px-6 py-4 border-t border-slate-100">
-          <button mat-raised-button
-            class="!bg-teal-600 !text-white !rounded-lg"
-            (click)="goBack()">
-            Try this problem
-          </button>
-        </div> -->
       </div>
     </div>
   `,
@@ -88,7 +80,9 @@ export class AttemptHistoryComponent implements OnInit {
   studentId = localStorage.getItem('student_id') || '';
   history: HistoryEntry[] = [];
   loading = true;
-  cols = ['attempt', 'state', 'timestamp'];
+
+  STATE_BADGE = STATE_BADGE;
+  STATE_DOT = STATE_DOT;
 
   constructor(private route: ActivatedRoute, private router: Router, private svc: TutorService) {}
 
@@ -102,8 +96,6 @@ export class AttemptHistoryComponent implements OnInit {
   }
 
   stateLabel(s: string) {
-    return ({ correct: 'Correct', partially_flawed: 'Partial', incorrect: 'Incorrect' } as Record<string,string>)[s] ?? s;
+    return ({ correct: 'Correct', partially_flawed: 'Partial', incorrect: 'Incorrect' } as Record<string, string>)[s] ?? s;
   }
-  back() { this.router.navigate(['/problems']); }
-  goBack() { this.router.navigate(['/problem', this.problemIndex]); }
 }

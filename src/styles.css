@@ -1,26 +1,95 @@
-@import "../node_modules/@angular/material/prebuilt-themes/indigo-pink.css";
 @import "tailwindcss";
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 html, body {
   height: 100%;
   margin: 0;
   font-family: Roboto, "Helvetica Neue", sans-serif;
-  background-color: #f8fafc;
+  background-color: #0b1120;
+  color: #e2e8f0;
 }
 
-/* Keep these as named classes so templates can reference them */
-.state-correct          { @apply text-emerald-700 font-semibold; }
-.state-partially_flawed { @apply text-amber-700 font-semibold; }
-.state-incorrect        { @apply text-red-700 font-semibold; }
+* {
+  scrollbar-color: #334155 transparent;
+}
+
+/* ── Layout primitives ────────────────────────────────────────────────── */
+.page-shell {
+  @apply max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-8;
+}
+
+.app-card {
+  @apply bg-slate-900/70 backdrop-blur rounded-2xl border border-slate-800 shadow-lg shadow-black/20 transition-colors duration-200;
+}
+
+.app-card-hover {
+  @apply hover:border-violet-500/60 hover:shadow-violet-900/20 hover:-translate-y-0.5 transition-all duration-200 cursor-pointer;
+}
+
+.app-toolbar {
+  @apply !bg-gradient-to-r !from-violet-600 !via-violet-700 !to-slate-900 !text-white shadow-lg shadow-black/30 !px-3 sm:!px-5 backdrop-blur;
+}
+
+/* ── Buttons ───────────────────────────────────────────────────────────── */
+.btn-primary {
+  @apply !bg-violet-500 !text-white !font-semibold !rounded-xl hover:!bg-violet-400
+         shadow-md shadow-violet-500/25 hover:shadow-violet-400/35
+         transition-all duration-200 active:!scale-[0.98];
+}
+.btn-outline {
+  @apply !border-slate-700 !text-slate-300 !rounded-xl hover:!border-violet-500 hover:!text-violet-300
+         transition-all duration-200 active:!scale-[0.98];
+}
+.btn-ghost {
+  @apply !text-slate-400 !rounded-xl hover:!text-slate-200 transition-colors duration-200;
+}
+
+/* ── Badges ────────────────────────────────────────────────────────────── */
+.badge { @apply inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold border whitespace-nowrap; }
+.badge-success { @apply text-emerald-400 bg-emerald-500/10 border-emerald-500/30; }
+.badge-warning { @apply text-amber-400 bg-amber-500/10 border-amber-500/30; }
+.badge-danger { @apply text-red-400 bg-red-500/10 border-red-500/30; }
+.badge-neutral { @apply text-slate-400 bg-slate-800/60 border-slate-700; }
+.badge-info { @apply text-sky-300 bg-sky-500/10 border-sky-500/30; }
+
+/* ── Method chips ──────────────────────────────────────────────────────── */
+.method-pill {
+  @apply px-3 py-1.5 rounded-full text-xs font-semibold border border-slate-700 text-slate-300 bg-slate-800/60
+         hover:border-violet-500 hover:text-violet-300 transition-all duration-200;
+}
+.method-pill-active {
+  @apply !border-violet-500 !bg-violet-500 !text-white shadow-md shadow-violet-500/30;
+}
+
+/* ── Progress bar ──────────────────────────────────────────────────────── */
+.progress-track { @apply w-full h-2 rounded-full bg-slate-800 overflow-hidden; }
+.progress-fill { @apply h-full rounded-full transition-all duration-500; }
+
+/* ── Domain-specific ───────────────────────────────────────────────────── */
+.state-correct { @apply text-emerald-400 font-semibold; }
+.state-partially_flawed { @apply text-amber-400 font-semibold; }
+.state-incorrect { @apply text-red-400 font-semibold; }
 
 .tutor-response {
-  @apply bg-emerald-50 border-l-4 border-emerald-500 px-4 py-3 rounded-r-lg whitespace-pre-wrap leading-relaxed text-slate-700;
+  @apply bg-emerald-500/10 border-l-4 border-emerald-500 px-4 py-3 rounded-r-lg whitespace-pre-wrap leading-relaxed text-slate-200;
 }
 
 .due-chip {
-  @apply bg-amber-100 text-amber-700 text-xs font-semibold px-2 py-0.5 rounded-full;
+  @apply bg-amber-500/15 text-amber-300 text-xs font-semibold px-2 py-0.5 rounded-full;
 }
+
+/* ── Motion ────────────────────────────────────────────────────────────── */
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.msg-in { animation: fade-in-up 0.35s ease both; }
+
+::selection { background: rgba(167, 139, 250, 0.35); }
+
+/* ── Utility ───────────────────────────────────────────────────────────── */
+.sticky-input { scroll-margin-top: 88px; }
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #334155; border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar-track { background: transparent; }
