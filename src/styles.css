@@ -86,6 +86,17 @@ html, body {
 
 ::selection { background: rgba(167, 139, 250, 0.35); }
 
+/* ── Material fixes ────────────────────────────────────────────────────── */
+/* The outline's middle "notch" piece (which makes room for the floating
+   label) carries a stray left/right border in this Material version.
+   Usually too subtle to notice, but glaring against our dark theme's
+   high-contrast outline color — shows as a vertical seam inside every
+   outlined field, right after the label. */
+.mdc-notched-outline__notch {
+  border-left: none !important;
+  border-right: none !important;
+}
+
 /* ── Utility ───────────────────────────────────────────────────────────── */
 .sticky-input { scroll-margin-top: 88px; }
 
